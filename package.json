@@ -1,0 +1,13 @@
+{
+  "name": "rsvx-status",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One page and one Discord message showing whether GitHub, Render and the VPS are running correctly.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/run.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED"
+}
