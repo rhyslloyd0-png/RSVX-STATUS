@@ -19,8 +19,8 @@ A failure has to be seen twice in a row before it alerts, so a single blip does 
 ## Install on the VPS
 
 ```bash
-git clone https://github.com/rhyslloyd0-png/RSVX_Status.git
-cd RSVX_Status
+git clone https://github.com/rhyslloyd0-png/RSVX-STATUS.git
+cd RSVX-STATUS
 sudo ./install.sh        # first run creates .env
 nano .env                # fill in the keys below
 sudo ./install.sh        # second run starts the service
