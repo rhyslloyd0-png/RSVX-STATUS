@@ -1,0 +1,98 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.rsvx.status",
+  "Name": "RSVX Status",
+  "Version": "1.0.0.0",
+  "Author": "RSVX Developments",
+  "Description": "Shows your RSVX Status board on Stream Deck keys: whether everything is running, server load, individual services and what failed.",
+  "URL": "https://rsvx.co.uk",
+  "Category": "RSVX Status",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/plugin",
+  "CodePath": "bin/plugin.js",
+  "PropertyInspectorPath": "ui/inspector.html",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.5"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    }
+  ],
+  "Nodejs": {
+    "Version": "20",
+    "Debug": "disabled"
+  },
+  "Actions": [
+    {
+      "Name": "Overall status",
+      "UUID": "com.rsvx.status.overall",
+      "Icon": "imgs/action-overall",
+      "Tooltip": "Green when every check passes, otherwise how many need attention. Press to open the board.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Server load",
+      "UUID": "com.rsvx.status.load",
+      "Icon": "imgs/action-load",
+      "Tooltip": "CPU, RAM and disk of the server, or one of them on its own. Press to check now.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Service",
+      "UUID": "com.rsvx.status.service",
+      "Icon": "imgs/action-service",
+      "Tooltip": "One watched service, such as FiveM or txAdmin. Press to check now.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "What failed",
+      "UUID": "com.rsvx.status.failure",
+      "Icon": "imgs/action-failure",
+      "Tooltip": "Names the checks that are failing. Press to step through them.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ]
+    }
+  ]
+}

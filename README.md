@@ -78,6 +78,29 @@ This runs on the VPS, so if the whole VPS dies it cannot tell you. To cover that
 
 The first time it runs it posts one message with everything on it and then edits that same message every minute. Pin it. If you delete it, a new one is posted. Alerts arrive as separate messages so they notify you.
 
+## Windows overlay (Windhawk)
+
+`windhawk/rsvx-status-hud.wh.cpp` is a [Windhawk](https://windhawk.net) mod that puts a small click-through HUD in a corner of your own PC: overall state, CPU, RAM and disk, and the watched services. It grows to list what failed when a check goes down.
+
+In Windhawk choose **Create a New Mod**, replace the template with the contents of that file, then **Compile Mod**. Open the mod's **Settings** tab and enter the board address and password. Ctrl+Alt+F9 hides and shows it.
+
+## iPhone widget (Scriptable)
+
+`ios/RSVX Status.js` is a widget script for the free [Scriptable](https://scriptable.app) app. Create a new script in Scriptable, paste the file in, and run it once to enter the board address and password (kept in the iOS Keychain). Then add a Scriptable widget to the Home Screen or Lock Screen and choose the script. Small, medium and Lock Screen sizes are supported; tapping the widget opens the board.
+
+## Stream Deck plugin
+
+`streamdeck/` is a Stream Deck plugin with four keys: overall status (press to open the board), server load, a single service, and what failed (press to step through). Build the installer with:
+
+```bash
+cd streamdeck
+npm install
+npm run build
+npm run pack
+```
+
+Double-click `dist/com.rsvx.status.streamDeckPlugin` to install it, drag a key onto the deck, and enter the board address and password in the key's settings. They are shared by every key.
+
 ## Test
 
 ```bash

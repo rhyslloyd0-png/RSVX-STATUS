@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>RSVX Status</title>
+<style>
+  * { box-sizing: border-box; border-radius: 0; }
+  body { margin: 0; padding: 10px 14px 16px; background: transparent; color: #d8d8d8; font: 12px/1.4 -apple-system, "Segoe UI", Arial, sans-serif; }
+  h2 { margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 1px solid #3a3a3a; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #9a9a9a; font-weight: 700; }
+  h2:first-child { margin-top: 2px; }
+  label { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; margin-bottom: 7px; }
+  label span { text-align: right; color: #b4b4b4; }
+  input, select, button { width: 100%; padding: 5px 7px; background: #3d3d3d; color: #ededf0; border: 1px solid #4a4a4a; font: inherit; }
+  input:focus, select:focus, button:focus { outline: none; border-color: #8457e6; }
+  button { cursor: pointer; }
+  button:hover { border-color: #8457e6; }
+  .note { margin: 6px 0 0 100px; color: #8d8d9a; font-size: 11px; }
+  .note.bad { color: #e5484d; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+  <div id="for-load" hidden>
+    <h2>This key</h2>
+    <label><span>Show</span>
+      <select id="metric">
+        <option value="all">CPU, RAM and disk</option>
+        <option value="cpu">CPU only</option>
+        <option value="ram">RAM only</option>
+        <option value="disk">Disk only (fullest)</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="for-service" hidden>
+    <h2>This key</h2>
+    <label><span>Service</span><select id="service"></select></label>
+    <label><span>Or type it</span><input id="service-text" type="text" placeholder="FiveM" spellcheck="false"></label>
+    <p class="note" id="service-note">The list is read from the board.</p>
+  </div>
+
+  <h2>Board (shared by every key)</h2>
+  <label><span>Address</span><input id="boardUrl" type="text" placeholder="http://your-server:8787" spellcheck="false" autocomplete="off"></label>
+  <label><span>Password</span><input id="password" type="password" autocomplete="off"></label>
+  <label><span>Update every</span>
+    <select id="refreshSeconds">
+      <option value="10">10 seconds</option>
+      <option value="15">15 seconds</option>
+      <option value="30">30 seconds</option>
+      <option value="60">1 minute</option>
+      <option value="300">5 minutes</option>
+    </select>
+  </label>
+  <p class="note">The password is the one you open the status page with. It is kept in Stream Deck's settings on this PC.</p>
+
+<script>
+  var socket, uuid, action, settings = {}, globals = {};
+  var $ = function (id) { return document.getElementById(id); };
+  var out = function (o) { if (socket && socket.readyState === 1) socket.send(JSON.stringify(o)); };
+
+  // Stream Deck calls this once the panel has loaded.
+  function connectElgatoStreamDeckSocket(port, inUuid, registerEvent, info, actionInfo) {
+    uuid = inUuid;
+    var a = {};
+    try { a = JSON.parse(actionInfo); } catch (e) {}
+    action = a.action || '';
+    settings = (a.payload && a.payload.settings) || {};
+    $('for-load').hidden = action !== 'com.rsvx.status.load';
+    $('for-service').hidden = action !== 'com.rsvx.status.service';
+    $('metric').value = settings.metric || 'all';
+    $('service-text').value = settings.service || '';
+    fillServices([]);
+
+    socket = new WebSocket('ws://127.0.0.1:' + port);
+    socket.onopen = function () {
+      out({ event: registerEvent, uuid: uuid });
+      out({ event: 'getGlobalSettings', context: uuid });
+      askServices();
+    };
+    socket.onmessage = function (e) {
+      var m = JSON.parse(e.data);
+      if (m.event === 'didReceiveGlobalSettings') {
+        globals = (m.payload && m.payload.settings) || {};
+        $('boardUrl').value = globals.boardUrl || '';
+        $('password').value = globals.password || '';
+        $('refreshSeconds').value = String(globals.refreshSeconds || 15);
+      } else if (m.event === 'sendToPropertyInspector' && m.payload && m.payload.type === 'services') {
+        fillServices(m.payload.names || []);
+        var note = $('service-note');
+        note.className = 'note' + (m.payload.error ? ' bad' : '');
+        note.textContent = m.payload.error ? 'Could not read the board (' + m.payload.error + '). Type the name instead.'
+          : (m.payload.names || []).length ? 'The list is read from the board.' : 'No services yet. Fill in the board below, or type the name.';
+      }
+    };
+  }
+
+  function askServices() {
+    if (action === 'com.rsvx.status.service') out({ action: action, event: 'sendToPlugin', context: uuid, payload: { type: 'services' } });
+  }
+
+  function fillServices(names) {
+    var current = settings.service || '';
+    var list = names.slice();
+    if (current && list.map(function (n) { return n.toLowerCase(); }).indexOf(current.toLowerCase()) === -1) list.unshift(current);
+    var select = $('service');
+    select.innerHTML = '';
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = list.length ? 'Choose a service' : 'Nothing to choose yet';
+    select.appendChild(blank);
+    list.forEach(function (n) {
+      var o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      select.appendChild(o);
+    });
+    select.value = list.filter(function (n) { return n.toLowerCase() === current.toLowerCase(); })[0] || '';
+  }
+
+  function saveSettings() {
+    out({ event: 'setSettings', context: uuid, payload: settings });
+  }
+  function saveGlobals() {
+    globals = {
+      boardUrl: $('boardUrl').value.trim().replace(/\/+$/, ''),
+      password: $('password').value,
+      refreshSeconds: Number($('refreshSeconds').value) || 15
+    };
+    out({ event: 'setGlobalSettings', context: uuid, payload: globals });
+    setTimeout(askServices, 2500); // give the plugin a moment to read the board
+  }
+
+  $('metric').onchange = function () { settings.metric = this.value; saveSettings(); };
+  $('service').onchange = function () { settings.service = this.value; $('service-text').value = this.value; saveSettings(); };
+  $('service-text').onchange = function () { settings.service = this.value.trim(); saveSettings(); fillServices([].slice.call($('service').options).map(function (o) { return o.value; }).filter(Boolean)); };
+  $('boardUrl').onchange = saveGlobals;
+  $('password').onchange = saveGlobals;
+  $('refreshSeconds').onchange = saveGlobals;
+</script>
+</body>
+</html>

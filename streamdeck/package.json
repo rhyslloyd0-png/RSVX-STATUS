@@ -1,0 +1,19 @@
+{
+  "name": "rsvx-status-streamdeck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stream Deck plugin for the RSVX Status board",
+  "scripts": {
+    "build": "esbuild src/plugin.js --bundle --platform=node --target=node20 --format=cjs --outfile=com.rsvx.status.sdPlugin/bin/plugin.js",
+    "icons": "python3 make-icons.py",
+    "validate": "streamdeck validate com.rsvx.status.sdPlugin",
+    "pack": "streamdeck pack com.rsvx.status.sdPlugin --output dist --force"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.7.0",
+    "esbuild": "^0.25.0"
+  }
+}
