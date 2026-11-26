@@ -75,7 +75,7 @@
 <div class="wrap">
   <header>
     <div class="brand">RSVX <span>STATUS</span></div>
-    <div class="checked" id="checked">loading</div>
+    <div class="checked"><span id="host"></span><span id="checked">loading</span></div>
   </header>
 
   <div class="banner" id="banner">
@@ -211,6 +211,7 @@
       return '<span>' + GROUP[g] + ' <b>' + (l.length ? (l.length - b) + '/' + l.length : 'off') + '</b></span>';
     }).join('');
     $('checked').textContent = 'checked ' + ago(d.generatedAt) + ' ago';
+    $('host').textContent = d.host ? d.host + ' · ' : '';
 
     $('attention').hidden = !bad.length;
     $('attention-count').textContent = bad.length;

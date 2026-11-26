@@ -28,6 +28,27 @@ sudo ./install.sh        # second run starts the service
 
 Then open `http://YOUR-VPS-IP:8787` (allow the port in the firewall, or put it behind your reverse proxy on a subdomain).
 
+## Install on Windows Server
+
+Needs Node 18 or newer and Git for Windows, both installed for all users.
+
+```powershell
+git clone https://github.com/rhyslloyd0-png/RSVX-STATUS.git
+cd RSVX-STATUS
+powershell -ExecutionPolicy Bypass -File .\install.ps1                 # first run creates .env and opens it in Notepad
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -OpenFirewall   # second run starts it and opens the port
+```
+
+Run PowerShell as Administrator. It is installed as a scheduled task called "RSVX Status" that starts with the machine and restarts if it stops. The log is `data\status.log`.
+
+Windows differences in `.env`:
+
+- `WATCH_SERVICES` instead of `WATCH_SYSTEMD`: Windows service names, for example `MariaDB,W3SVC`.
+- `REPO_ROOTS` must be Windows folders, for example `C:\FXServer,C:\Users\Administrator\Documents`.
+- Delete the Linux `REPO_ROOTS` line or it will find nothing.
+
+Running a board on two servers: each keeps its own Discord message. Give each a `VPS_NAME`, and on the second one set `ALERT_GROUPS=vps,sites` so GitHub and Render failures are only alerted once.
+
 ## Settings (.env)
 
 | Key | What it is |
@@ -39,6 +60,9 @@ Then open `http://YOUR-VPS-IP:8787` (allow the port in the firewall, or put it b
 | `DISCORD_MENTION` | Optional. Who to ping on a failure, for example `<@123456789012345678>`. |
 | `SITES` | `Name|https://address`, comma separated. |
 | `WATCH_SYSTEMD` | systemd units to watch, comma separated, for example `nginx,mariadb`. |
+| `WATCH_SERVICES` | Windows only. Service names to watch, for example `MariaDB,W3SVC`. |
+| `VPS_NAME` | Optional. Name shown for this server. |
+| `ALERT_GROUPS` | Optional. Which areas send alerts: any of `vps,render,github,sites`. |
 | `WATCH_PORTS` | `Name:port`, comma separated. Default watches FiveM 30120 and txAdmin 40120. |
 | `WATCH_PM2`, `WATCH_DOCKER` | `auto` (default) or `off`. |
 | `REPO_ROOTS` | Folders searched for git repos. |

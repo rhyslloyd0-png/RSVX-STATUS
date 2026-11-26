@@ -13,6 +13,23 @@ const { loadEnv, ROOT } = require('./lib/util');
 
 loadEnv(path.join(ROOT, '.env'));
 
+// On Windows there is no journal, so keep a small log file next to the data.
+if (process.platform === 'win32' || process.env.LOG_FILE) {
+  const file = process.env.LOG_FILE || path.join(ROOT, 'data', 'status.log');
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    if (fs.existsSync(file) && fs.statSync(file).size > 1024 * 1024) fs.renameSync(file, `${file}.old`);
+    for (const level of ['log', 'error']) {
+      const original = console[level].bind(console);
+      console[level] = (...args) => {
+        original(...args);
+        const line = args.map((a) => (a instanceof Error ? a.stack : typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+        try { fs.appendFileSync(file, `${new Date().toISOString()} ${line}\n`); } catch { /* disk full or locked */ }
+      };
+    }
+  } catch { /* logging is best effort */ }
+}
+
 const store = require('./lib/store');
 const discord = require('./lib/discord');
 const collectors = {
@@ -26,6 +43,11 @@ const LABEL = { github: 'GitHub', vps: 'VPS', render: 'Render', sites: 'Websites
 const PORT = Number(process.env.PORT) || 8787;
 const INTERVAL = Math.max(process.env.TEST_FAST ? 1 : 30, Number(process.env.CHECK_INTERVAL) || 60) * 1000;
 const PAGE_URL = process.env.PUBLIC_URL || '';
+const HOST = process.env.VPS_NAME || require('os').hostname();
+// Which areas may send alerts. A second board on another server can set
+// ALERT_GROUPS=vps,sites so GitHub and Render failures are not announced twice.
+const ALERT_GROUPS = new Set(require('./lib/util').list(process.env.ALERT_GROUPS || 'vps,render,github,sites'));
+const canAlert = (c) => ALERT_GROUPS.has(c.group);
 
 // ---- the check loop ------------------------------------------------------
 
@@ -60,10 +82,10 @@ async function cycle() {
     changes = changes.concat(...rest);
 
     if (cycles === 0) {
-      const existing = store.existingProblems().map((c) => ({ name: c.name, group: c.group, to: c.status, summary: c.summary, url: c.url }));
+      const existing = store.existingProblems().map((c) => ({ name: c.name, group: c.group, to: c.status, summary: c.summary, url: c.url })).filter(canAlert);
       if (existing.length) await discord.sendAlert(existing, PAGE_URL, `Status board started: ${existing.length} existing problem${existing.length === 1 ? '' : 's'}`);
-    } else if (changes.length) {
-      await discord.sendAlert(changes, PAGE_URL);
+    } else if (changes.some(canAlert)) {
+      await discord.sendAlert(changes.filter(canAlert), PAGE_URL);
     }
     await discord.updateBoard(store.snapshot(), PAGE_URL);
 
@@ -157,7 +179,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/status') {
-      return send(res, 200, JSON.stringify({ ...store.snapshot(), ready: cycles > 0, interval: INTERVAL }), 'application/json');
+      return send(res, 200, JSON.stringify({ ...store.snapshot(), ready: cycles > 0, interval: INTERVAL, host: HOST }), 'application/json');
     }
     if (url.pathname === '/api/recheck' && req.method === 'POST') {
       cycle();
